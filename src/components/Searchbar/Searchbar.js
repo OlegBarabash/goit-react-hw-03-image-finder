@@ -1,21 +1,29 @@
-import { SearchbarHeader } from './Searchbar.styled';
+import {
+  SearchButton,
+  SearchForm,
+  SearchbarHeader,
+  SearchButtonLabel,
+  SearchFormInput,
+} from './Searchbar.styled';
+import { BsSearch } from 'react-icons/bs';
 
 export const Searchbar = ({ onSubmit }) => {
   return (
     <SearchbarHeader>
-      <form className="form" onSubmit={onSubmit}>
-        <button type="submit" className="button">
-          <span className="button-label">Search</span>
-        </button>
+      <SearchForm onSubmit={onSubmit}>
+        <SearchButton type="submit" className="button">
+          <BsSearch size={20} />
+          <SearchButtonLabel>Search</SearchButtonLabel>
+        </SearchButton>
 
-        <input
+        <SearchFormInput
           className="input"
           type="text"
           autoComplete="off"
           autoFocus
           placeholder="Search images and photos"
         />
-      </form>
+      </SearchForm>
     </SearchbarHeader>
   );
 };

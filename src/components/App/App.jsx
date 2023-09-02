@@ -3,6 +3,9 @@ import { AppSection } from './App,styled';
 import { fetchPictures } from '../../services/request';
 
 import { Component } from 'react';
+import { ImageGallery } from 'components/ImageGallery/ImageGallery';
+import { Button } from 'components/Button/Button';
+import { Loader } from 'components/Loader/Loader';
 
 export class App extends Component {
   state = {
@@ -11,13 +14,22 @@ export class App extends Component {
     page: 1,
   };
 
+  getQuery = () => {
+    const { query } = this.state;
+    return query
+      .split('')
+      .slice(query.indexOf('/') + 1)
+      .join('');
+  };
+
   handleSubmit = evt => {
     evt.preventDefault();
-    console.log('Submit', evt.target.elements[1].value);
     this.setState({
       query: `${Date.now()}/${evt.target.elements[1].value}`,
       images: [],
       page: 1,
+      loading: false,
+      error: false,
     });
   };
 
@@ -29,27 +41,26 @@ export class App extends Component {
 
   async componentDidUpdate(prevProps, prevState) {
     const { query, page } = this.state;
-    const queryWord = query
-      .split('')
-      .slice(query.indexOf('/') + 1)
-      .join('');
+
     if (prevState.query !== query || prevState.page !== page) {
       try {
-        // this.setState({ loading: true, error: false });
+        this.setState({ loading: true, error: false });
 
-        const resp = await fetchPictures(queryWord, page);
-        console.log(resp);
-        // this.setState({ quizItems: quizzes });
+        const resp = await fetchPictures(this.getQuery(), page);
+        const imgArr = resp.data.hits.map(img => {
+          return {
+            id: img.id,
+            webformatURL: img.webformatURL,
+            largeImageURL: img.largeImageURL,
+          };
+        });
+        imgArr.unshift(...this.state.images);
+        this.setState({ images: imgArr });
       } catch (error) {
-        // this.setState({ error: true });
+        this.setState({ error: true });
       } finally {
-        // this.setState({ loading: false });
+        this.setState({ loading: false });
       }
-
-      // HTTP REQUEST
-      // axios.get(`/search?${this.state.query}}`).then(data => {
-      //   this.setState({ images: data });
-      // });
     }
   }
 
@@ -57,6 +68,13 @@ export class App extends Component {
     return (
       <AppSection>
         <Searchbar onSubmit={this.handleSubmit} />
+        <ImageGallery images={this.state.images} />
+        {this.state.loading && <Loader />}
+        {this.state.images.length ? (
+          <Button nextPage={this.handleLoadMore} />
+        ) : (
+          <></>
+        )}
       </AppSection>
     );
   }
