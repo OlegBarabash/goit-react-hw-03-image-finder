@@ -16,6 +16,7 @@ export const Modal = ({ picture, onCloseModal, isOpen }) => {
       zIndex: '1200',
     },
     content: {
+      overflow: 'hidden',
       position: 'revert',
       display: 'flex',
       alignItems: 'center',
