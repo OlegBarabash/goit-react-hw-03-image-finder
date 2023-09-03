@@ -1,17 +1,24 @@
 import { Searchbar } from 'components/Searchbar/Searchbar';
 import { AppSection } from './App,styled';
 import { fetchPictures } from '../../services/request';
-
+import toast, { Toaster } from 'react-hot-toast';
 import { Component } from 'react';
 import { ImageGallery } from 'components/ImageGallery/ImageGallery';
 import { Button } from 'components/Button/Button';
 import { Loader } from 'components/Loader/Loader';
+import { Modal } from 'components/Modal/Modal';
 
 export class App extends Component {
   state = {
     query: '',
     images: [],
     page: 1,
+    loading: false,
+    largeImageData: {
+      largeImageURL: '',
+      tags: '',
+    },
+    modalIsOpen: false,
   };
 
   getQuery = () => {
@@ -29,7 +36,11 @@ export class App extends Component {
       images: [],
       page: 1,
       loading: false,
-      error: false,
+      largeImageData: {
+        largeImageURL: '',
+        tags: '',
+      },
+      modalIsOpen: false,
     });
   };
 
@@ -39,25 +50,30 @@ export class App extends Component {
     }));
   };
 
+  handleOpenModal = largeImage => {
+    this.setState({ largeImageData: largeImage, modalIsOpen: true });
+  };
+
+  handleCloseModal = () => {
+    this.setState({ largeImage: '', modalIsOpen: false });
+  };
+
   async componentDidUpdate(prevProps, prevState) {
     const { query, page } = this.state;
 
     if (prevState.query !== query || prevState.page !== page) {
       try {
-        this.setState({ loading: true, error: false });
+        this.setState({ loading: true });
 
         const resp = await fetchPictures(this.getQuery(), page);
-        const imgArr = resp.data.hits.map(img => {
-          return {
-            id: img.id,
-            webformatURL: img.webformatURL,
-            largeImageURL: img.largeImageURL,
-          };
-        });
-        imgArr.unshift(...this.state.images);
-        this.setState({ images: imgArr });
+        const { hits } = resp.data;
+        if (!hits.length) {
+          toast.error('Nothing was found!');
+        }
+        hits.unshift(...this.state.images);
+        this.setState({ images: hits });
       } catch (error) {
-        this.setState({ error: true });
+        toast.error('Something went wrong!');
       } finally {
         this.setState({ loading: false });
       }
@@ -65,16 +81,22 @@ export class App extends Component {
   }
 
   render() {
+    const { images, loading, modalIsOpen, largeImageData } = this.state;
+
     return (
-      <AppSection>
+      <AppSection id="modal">
         <Searchbar onSubmit={this.handleSubmit} />
-        <ImageGallery images={this.state.images} />
-        {this.state.loading && <Loader />}
-        {this.state.images.length ? (
-          <Button nextPage={this.handleLoadMore} />
-        ) : (
-          <></>
+        <ImageGallery images={images} openModal={this.handleOpenModal} />
+        {loading && <Loader />}
+        {images.length ? <Button nextPage={this.handleLoadMore} /> : <></>}
+        {modalIsOpen && (
+          <Modal
+            picture={largeImageData}
+            onCloseModal={this.handleCloseModal}
+            isOpen={modalIsOpen}
+          />
         )}
+        <Toaster />
       </AppSection>
     );
   }
