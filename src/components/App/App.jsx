@@ -13,6 +13,7 @@ export class App extends Component {
     query: '',
     images: [],
     page: 1,
+    totalPics: 0,
     loading: false,
     largeImageData: {
       largeImageURL: '',
@@ -35,6 +36,7 @@ export class App extends Component {
       query: `${Date.now()}/${evt.target.elements[1].value}`,
       images: [],
       page: 1,
+      totalPics: 0,
       loading: false,
       largeImageData: {
         largeImageURL: '',
@@ -60,12 +62,16 @@ export class App extends Component {
 
   async componentDidUpdate(prevProps, prevState) {
     const { query, page } = this.state;
-
+    if (this.getQuery().trim() === '') {
+      return;
+    }
     if (prevState.query !== query || prevState.page !== page) {
       try {
         this.setState({ loading: true });
 
         const resp = await fetchPictures(this.getQuery(), page);
+        this.setState({ totalPics: resp.data.totalHits });
+
         const { hits } = resp.data;
         if (!hits.length) {
           toast.error('Nothing was found!');
@@ -81,14 +87,15 @@ export class App extends Component {
   }
 
   render() {
-    const { images, loading, modalIsOpen, largeImageData } = this.state;
+    const { images, loading, modalIsOpen, largeImageData, totalPics, page } =
+      this.state;
 
     return (
       <AppSection id="modal">
         <Searchbar onSubmit={this.handleSubmit} />
         <ImageGallery images={images} openModal={this.handleOpenModal} />
         {loading && <Loader />}
-        {images.length ? <Button nextPage={this.handleLoadMore} /> : <></>}
+        {totalPics / 12 > page && <Button nextPage={this.handleLoadMore} />}
         {modalIsOpen && (
           <Modal
             picture={largeImageData}
